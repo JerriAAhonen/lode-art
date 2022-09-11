@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Data;
+using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
@@ -12,7 +13,7 @@ public class Chunk : MonoBehaviour
 	private readonly int[] triangles = new int[totalVertices];
 	private readonly Vector2[] uvs = new Vector2[totalVertices];
 
-	private bool[,,] voxelMap = new bool[ChunkData.ChunkWidth, ChunkData.ChunkHeight, ChunkData.ChunkWidth];
+	private byte[,,] voxelMap = new byte[ChunkData.ChunkWidth, ChunkData.ChunkHeight, ChunkData.ChunkWidth];
 
 	private void Awake()
 	{
@@ -27,27 +28,18 @@ public class Chunk : MonoBehaviour
 		CreateMesh();
 	}
 
-	private bool CheckVoxel(Vector3Int pos)
-	{
-		int x = pos.x;
-		int y = pos.y;
-		int z = pos.z;
-
-		if (x < 0 || x > ChunkData.ChunkWidth - 1
-		          || y < 0 || y > ChunkData.ChunkHeight - 1
-		          || z < 0 || z > ChunkData.ChunkWidth - 1)
-			return false;
-
-		return voxelMap[x, y, z];
-	}
-
 	private void PopulateVoxelMap()
 	{
 		for (int y = 0; y < ChunkData.ChunkHeight; y++)
 		for (int x = 0; x < ChunkData.ChunkWidth; x++)
 		for (int z = 0; z < ChunkData.ChunkWidth; z++)
 		{
-			voxelMap[x, y, z] = true;
+			if (y < 1)
+				voxelMap[x, y, z] = 0;
+			else if (y == ChunkData.ChunkHeight - 1)
+				voxelMap[x, y, z] = 2;
+			else
+				voxelMap[x, y, z] = 1;
 		}
 	}
 
@@ -77,10 +69,9 @@ public class Chunk : MonoBehaviour
 			vertices[vertexIndex + 2] = pos + VoxelData.Verts[VoxelData.Tris[i, 2]];
 			vertices[vertexIndex + 3] = pos + VoxelData.Verts[VoxelData.Tris[i, 3]];
 
-			uvs[uvIndex] = VoxelData.Uvs[0];
-			uvs[uvIndex + 1] = VoxelData.Uvs[1];
-			uvs[uvIndex + 2] = VoxelData.Uvs[2];
-			uvs[uvIndex + 3] = VoxelData.Uvs[3];
+			var blockId = voxelMap[pos.x, pos.y, pos.z];
+			var textureId = World.I.Blocks[blockId].GetTextureId((VoxelData.Face)i);
+			AddTexture(textureId, uvIndex);
 
 			triangles[triangleIndex] = vertexIndex;
 			triangles[triangleIndex + 1] = vertexIndex + 1;
@@ -93,6 +84,40 @@ public class Chunk : MonoBehaviour
 			uvIndex += 4;
 			triangleIndex += 6;
 		}
+	}
+	
+	private bool CheckVoxel(Vector3Int pos)
+	{
+		int x = pos.x;
+		int y = pos.y;
+		int z = pos.z;
+
+		if (x is < 0 or > ChunkData.ChunkWidth - 1 
+		    || y is < 0 or > ChunkData.ChunkHeight - 1 
+		    || z is < 0 or > ChunkData.ChunkWidth - 1)
+			return false;
+
+		return World.I.Blocks[voxelMap[x, y, z]].IsSolid;
+	}
+	
+	private void AddTexture(int textureId, int index)
+	{
+		var normalized = TextureData.NormalizedBlockTextureSize;
+		
+		var row = textureId / TextureData.AtlasSizeInBlocks;
+		// Invert the row because we want row 0 to be at the top, instead of the bottom of the texture.
+		var inverted_row = TextureData.AtlasSizeInBlocks - 1 - row;
+		// Column number is the remainder after dividing by the number of columns. E.g. 15 % 4 = 3
+		var col = textureId % TextureData.AtlasSizeInBlocks;
+
+		// Normalise the row/col numbers to get values between 0f and 1f.
+		var x = col * normalized;
+		var y = inverted_row * normalized;
+
+		uvs[index] = new Vector2(x, y);
+		uvs[index + 1] = new Vector2(x, y + normalized);
+		uvs[index + 2] = new Vector2(x + normalized, y);
+		uvs[index + 3] = new Vector2(x + normalized, y + normalized);
 	}
 
 	private void CreateMesh()
