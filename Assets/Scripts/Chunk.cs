@@ -1,12 +1,13 @@
 ﻿using Data;
+using Extensions;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter))]
-[RequireComponent(typeof(MeshRenderer))]
-public class Chunk : MonoBehaviour
+public class Chunk
 {
+	private GameObject chunkGO;
 	private MeshFilter meshFilter;
 	private MeshRenderer meshRenderer;
+	private ChunkCoord chunkCoord;
 
 	private static int totalVertices => 6 * 6 * ChunkData.ChunkHeight * ChunkData.ChunkWidth * ChunkData.ChunkWidth;
 	private readonly Vector3[] vertices = new Vector3[totalVertices];
@@ -15,14 +16,29 @@ public class Chunk : MonoBehaviour
 
 	private byte[,,] voxelMap = new byte[ChunkData.ChunkWidth, ChunkData.ChunkHeight, ChunkData.ChunkWidth];
 
-	private void Awake()
+	public bool IsActive
 	{
-		meshFilter = GetComponent<MeshFilter>();
-		meshRenderer = GetComponent<MeshRenderer>();
+		get => chunkGO.activeSelf;
+		set => chunkGO.SetActive(value);
 	}
 
-	private void Start()
+	public Vector3Int Position => chunkGO.transform.position.ToVector3Int();
+	
+	public Chunk(int x, int z) : this(new ChunkCoord(x, z)) { }
+
+	public Chunk(ChunkCoord chunkCoord)
 	{
+		this.chunkCoord = chunkCoord;
+		
+		chunkGO = new GameObject();
+		chunkGO.transform.SetParent(World.I.transform);
+		chunkGO.transform.position = chunkCoord.WorldPos;
+		chunkGO.name = chunkCoord.ToString();
+		
+		meshFilter = chunkGO.AddComponent<MeshFilter>();
+		meshRenderer = chunkGO.AddComponent<MeshRenderer>();
+		meshRenderer.material = World.I.BlockMaterial;
+
 		PopulateVoxelMap();
 		CreateMeshData();
 		CreateMesh();
@@ -34,12 +50,7 @@ public class Chunk : MonoBehaviour
 		for (int x = 0; x < ChunkData.ChunkWidth; x++)
 		for (int z = 0; z < ChunkData.ChunkWidth; z++)
 		{
-			if (y < 1)
-				voxelMap[x, y, z] = 0;
-			else if (y == ChunkData.ChunkHeight - 1)
-				voxelMap[x, y, z] = 2;
-			else
-				voxelMap[x, y, z] = 1;
+			voxelMap[x, y, z] = World.I.GetVoxel(new Vector3Int(x, y, z) + Position);
 		}
 	}
 
@@ -86,20 +97,30 @@ public class Chunk : MonoBehaviour
 		}
 	}
 	
+	/// <summary>
+	/// IsVoxelSolid
+	/// </summary>
+	/// <param name="pos">LOCAL position of the Voxel inside the chunk</param>
 	private bool CheckVoxel(Vector3Int pos)
 	{
 		int x = pos.x;
 		int y = pos.y;
 		int z = pos.z;
 
-		if (x is < 0 or > ChunkData.ChunkWidth - 1 
-		    || y is < 0 or > ChunkData.ChunkHeight - 1 
-		    || z is < 0 or > ChunkData.ChunkWidth - 1)
-			return false;
-
+		// Get information of voxels in neighbouring chunks form World class
+		if (!IsVoxelInChunk(x, y, z))
+			return World.I.Blocks[World.I.GetVoxel(pos + Position)].IsSolid;
+		
 		return World.I.Blocks[voxelMap[x, y, z]].IsSolid;
 	}
 	
+	private static bool IsVoxelInChunk(int x, int y, int z)
+	{
+		return x is >= 0 and <= ChunkData.ChunkWidth - 1 
+		       && y is >= 0 and <= ChunkData.ChunkHeight - 1 
+		       && z is >= 0 and <= ChunkData.ChunkWidth - 1;
+	}
+
 	private void AddTexture(int textureId, int index)
 	{
 		var normalized = TextureData.NormalizedBlockTextureSize;

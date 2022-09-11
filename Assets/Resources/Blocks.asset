@@ -13,6 +13,14 @@ MonoBehaviour:
   m_Name: Blocks
   m_EditorClassIdentifier: 
   blockTypes:
+  - name: Air
+    isSolid: 0
+    back: 0
+    front: 0
+    top: 0
+    bottom: 0
+    left: 0
+    right: 0
   - name: Bedrock
     isSolid: 1
     back: 9
