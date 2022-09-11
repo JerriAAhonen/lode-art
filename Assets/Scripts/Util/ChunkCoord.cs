@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+﻿using Data;
+using UnityEngine;
 
-namespace Data
+namespace Util
 {
 	public class ChunkCoord
 	{

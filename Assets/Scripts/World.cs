@@ -9,7 +9,7 @@ public class World : Singleton<World>
 	[SerializeField] private Material blockAtlasMaterial;
 	[SerializeField] private BlockDatabase blockDatabase;
 	[SerializeField] private BiomeAttributes biome;
-	[SerializeField] private Transform player;
+	[SerializeField] private Player player;
 
 	private int seed = 1234;
 	
@@ -28,17 +28,19 @@ public class World : Singleton<World>
 		
 		spawnPos = new Vector3(
 			WorldData.WorldSizeInVoxels / 2f, 
-			ChunkData.ChunkHeight,
+			ChunkData.ChunkHeight - 20,
 			WorldData.WorldSizeInVoxels / 2f);
 		spawnPos += Vector3.up * 1.8f;
 		lastPlayerCC = ChunkCoord.FromWorldVector3(spawnPos);
 		
 		GenerateWorld();
+		
+		player.transform.position = spawnPos;
 	}
 
 	private void Update()
 	{
-		if (!ChunkCoord.FromWorldVector3(player.position).Equals(lastPlayerCC))
+		if (!ChunkCoord.FromWorldVector3(player.transform.position).Equals(lastPlayerCC))
 			CheckViewDistance();
 	}
 
@@ -96,7 +98,7 @@ public class World : Singleton<World>
 
 	private void CheckViewDistance()
 	{
-		lastPlayerCC = ChunkCoord.FromWorldVector3(player.position);
+		lastPlayerCC = ChunkCoord.FromWorldVector3(player.transform.position);
 		var previouslyActiveChunks = new List<ChunkCoord>(activeChunks); // TODO Pooling
 
 		for (int x = lastPlayerCC.X - Settings.ViewDistanceInChunks; x < lastPlayerCC.X + Settings.ViewDistanceInChunks; x++)
@@ -136,8 +138,6 @@ public class World : Singleton<World>
 		{
 			CreateChunk(x, z);
 		}
-
-		player.position = spawnPos;
 	}
 
 	private void CreateChunk(int x, int z) => CreateChunk(new ChunkCoord(x, z));
@@ -158,5 +158,18 @@ public class World : Singleton<World>
 		return pos.x >= 0 && pos.x < WorldData.WorldSizeInVoxels 
 		                 && pos.y is >= 0 and < ChunkData.ChunkHeight
 		                 && pos.z >= 0 && pos.z < WorldData.WorldSizeInVoxels;
+	}
+
+	public bool IsVoxelSolid(float x, float y, float z) =>
+		IsVoxelSolid(new Vector3Int(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Mathf.FloorToInt(z)));
+	
+	public bool IsVoxelSolid(Vector3Int pos)
+	{
+		var coord = ChunkCoord.FromWorldVector3(pos);
+
+		var xInChunkSpace = pos.x - coord.X * ChunkData.ChunkWidth;
+		var zInChunkSpace = pos.z - coord.Z * ChunkData.ChunkWidth;
+
+		return Blocks[chunks[coord.X, coord.Z].VoxelMap[xInChunkSpace, pos.y, zInChunkSpace]].IsSolid;
 	}
 }

@@ -1,6 +1,7 @@
 ﻿using Data;
 using Extensions;
 using UnityEngine;
+using Util;
 
 public class Chunk
 {
@@ -15,6 +16,7 @@ public class Chunk
 	private readonly Vector2[] uvs = new Vector2[totalVertices];
 
 	private byte[,,] voxelMap = new byte[ChunkData.ChunkWidth, ChunkData.ChunkHeight, ChunkData.ChunkWidth];
+	public byte[,,] VoxelMap => voxelMap;
 
 	public bool IsActive
 	{
