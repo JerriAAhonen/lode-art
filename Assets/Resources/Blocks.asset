@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: Blocks
   m_EditorClassIdentifier: 
   blockTypes:
-  - name: Air
+  - inspectorTitle: 0 Air
+    name: Air
     isSolid: 0
     back: 0
     front: 0
@@ -21,7 +22,8 @@ MonoBehaviour:
     bottom: 0
     left: 0
     right: 0
-  - name: Bedrock
+  - inspectorTitle: 1 Bedrock
+    name: Bedrock
     isSolid: 1
     back: 9
     front: 9
@@ -29,7 +31,8 @@ MonoBehaviour:
     bottom: 9
     left: 9
     right: 9
-  - name: Stone
+  - inspectorTitle: 2 Stone
+    name: Stone
     isSolid: 1
     back: 0
     front: 0
@@ -37,7 +40,17 @@ MonoBehaviour:
     bottom: 0
     left: 0
     right: 0
-  - name: Grass
+  - inspectorTitle: 3 Dirt
+    name: Dirt
+    isSolid: 1
+    back: 1
+    front: 1
+    top: 1
+    bottom: 1
+    left: 1
+    right: 1
+  - inspectorTitle: 4 Grass
+    name: Grass
     isSolid: 1
     back: 2
     front: 2
@@ -45,3 +58,12 @@ MonoBehaviour:
     bottom: 1
     left: 2
     right: 2
+  - inspectorTitle: 5 Sand
+    name: Sand
+    isSolid: 1
+    back: 10
+    front: 10
+    top: 10
+    bottom: 10
+    left: 10
+    right: 10
