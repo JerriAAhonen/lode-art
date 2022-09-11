@@ -2,7 +2,7 @@
 {
 	public static class WorldData
 	{
-		public const int WorldSizeInChunks = 100;
+		public const int WorldSizeInChunks = 10;
 		
 		private static int worldSizeInVoxels;
 		public static int WorldSizeInVoxels

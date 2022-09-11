@@ -450,6 +450,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blockAtlasMaterial: {fileID: 2100000, guid: 72751af07d71c284099ac2b6aa810756, type: 2}
   blockDatabase: {fileID: 11400000, guid: cd10a425fb8799648a933bbdd3bf4ab8, type: 2}
+  biome: {fileID: 11400000, guid: 051f3194a54cc5a47a21b00011a6598c, type: 2}
   player: {fileID: 330585546}
 --- !u!4 &1310329758
 Transform:

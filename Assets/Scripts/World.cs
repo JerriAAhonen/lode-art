@@ -1,14 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Data;
 using UnityEngine;
 using Util;
+using Random = UnityEngine.Random;
 
 public class World : Singleton<World>
 {
 	[SerializeField] private Material blockAtlasMaterial;
 	[SerializeField] private BlockDatabase blockDatabase;
+	[SerializeField] private BiomeAttributes biome;
 	[SerializeField] private Transform player;
+
+	private int seed = 1234;
 	
 	private Vector3 spawnPos;
 	private ChunkCoord lastPlayerCC;
@@ -17,10 +20,12 @@ public class World : Singleton<World>
 	private List<ChunkCoord> activeChunks = new();
 
 	public Material BlockMaterial => blockAtlasMaterial;
-	public List<BlockType> Blocks => blockDatabase.Types;
+	public List<BlockData> Blocks => blockDatabase.Types;
 
 	private void Start()
 	{
+		Random.InitState(seed);
+		
 		spawnPos = new Vector3(
 			WorldData.WorldSizeInVoxels / 2f, 
 			ChunkData.ChunkHeight,
@@ -40,24 +45,53 @@ public class World : Singleton<World>
 	/// <summary>
 	/// Get Block id in WORLD COORDS
 	/// </summary>
-	public byte GetVoxel(int x, int y, int z)
-	{
-		return GetVoxel(new Vector3Int(x, y, z));
-	}
-	
+	public byte GetVoxel(int x, int y, int z) => GetVoxel(new Vector3Int(x, y, z));
+
 	/// <summary>
 	/// Get Block id in WORLD COORDS
 	/// </summary>
 	public byte GetVoxel(Vector3Int pos)
 	{
-		if (!IsVoxelInWorld(pos))
-			return 0;
+		var y = pos.y;
 		
-		if (pos.y < 1)
-			return 1;
-		if (pos.y == ChunkData.ChunkHeight - 1)
-			return 3;
-		return 2;
+		// ----------------------------------
+		// Immutable pass
+		
+		if (!IsVoxelInWorld(pos))
+			return 0; // Air
+
+		if (y == 0)
+			return 1; // Bedrock
+
+		// ----------------------------------
+		// Basic terrain pass
+
+		var noise = Noise.Get2DPerlin(new Vector2(pos.x, pos.z), 0, biome.TerrainScale);
+		var terrainHeight = Mathf.FloorToInt(biome.TerrainHeight * noise) + biome.SurfaceHeight;
+		byte voxelValue;
+
+		if (y == terrainHeight)
+			voxelValue = 4; // Grass
+		else if (y < terrainHeight && y > terrainHeight - 4)
+			voxelValue = 3; // Dirt
+		else if (y > terrainHeight)
+			return 0; // Air
+		else
+			voxelValue = 2; // Stone
+
+		// ----------------------------------
+		// Second pass - Lodes
+
+		if (voxelValue == 2)
+		{
+			foreach (var lode in biome.Lodes)
+			{
+				if (y >= lode.MinHeight && y <= lode.MaxHeight)
+					if (Noise.Get3DPerlin(pos, lode.NoiseOffset, lode.Scale, lode.Threshold))
+						voxelValue = lode.BlockId;
+			}
+		}
+		return voxelValue;
 	}
 
 	private void CheckViewDistance()

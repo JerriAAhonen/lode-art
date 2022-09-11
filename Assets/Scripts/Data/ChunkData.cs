@@ -2,7 +2,7 @@
 {
 	public static class ChunkData
 	{
-		public const int ChunkWidth = 5;
-		public const int ChunkHeight = 20;
+		public const int ChunkWidth = 16;
+		public const int ChunkHeight = 128;
 	}
 }
