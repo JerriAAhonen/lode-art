@@ -6,6 +6,15 @@ namespace Data
 	[Serializable]
 	public class BlockType
 	{
+		#region Unity Editor
+
+		/// <summary>
+		/// Used to display a custom title in the Unity inspector
+		/// </summary>
+		[HideInInspector] public string inspectorTitle;
+
+		#endregion
+
 		[SerializeField] private string name;
 		[SerializeField] private bool isSolid;
 
