@@ -22,5 +22,20 @@ namespace Data
 		{
 			return $"Chunk ({X}, {Z})";
 		}
+
+		public static ChunkCoord FromWorldVector3(Vector3 pos)
+		{
+			var x = Mathf.FloorToInt(pos.x / ChunkData.ChunkWidth);
+			var z = Mathf.FloorToInt(pos.z / ChunkData.ChunkWidth);
+			return new ChunkCoord(x, z);
+		}
+
+		public bool Equals(ChunkCoord other)
+		{
+			if (other == null)
+				return false;
+
+			return X == other.X && Z == other.Z;
+		}
 	}
 }
