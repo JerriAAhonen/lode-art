@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Data
 {
 	[Serializable]
-	public class BlockType
+	public class BlockData
 	{
 		#region Unity Editor
 
@@ -43,4 +43,5 @@ namespace Data
 			};
 		}
 	}
+	
 }

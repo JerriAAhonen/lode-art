@@ -5,9 +5,9 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Blocks/Database", fileName = "Blocks")]
 public class BlockDatabase : ScriptableObject
 {
-	[SerializeField] private List<BlockType> blockTypes;
+	[SerializeField] private List<BlockData> blockTypes;
 
-	public List<BlockType> Types => blockTypes;
+	public List<BlockData> Types => blockTypes;
 
 	/// <summary>
 	/// Used to display the index of the block type in the inspector
