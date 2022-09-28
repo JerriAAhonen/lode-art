@@ -23,6 +23,7 @@ public class InputManager : Singleton<InputManager>
 		public event Action<bool> Shoot;
 		public event Action<bool> Aim;
 		public event Action SwitchWeapon;
+		public event Action ToggleDebugScreen;
 
 		private void Start()
 		{
@@ -84,6 +85,9 @@ public class InputManager : Singleton<InputManager>
 			pia.Player.SecondaryWeapon.performed += OnSecondaryWeaponPerformed;
 			pia.Player.SecondaryWeapon.Enable();
 
+			pia.Player.DebugScreen.performed += OnDebugScreenPerformed;
+			pia.Player.DebugScreen.Enable();
+
 			removeListeners = RemoveListeners;
 			
 			void OnJumpPerformed(InputAction.CallbackContext _) => Jump?.Invoke();
@@ -97,6 +101,7 @@ public class InputManager : Singleton<InputManager>
 			void OnAimCancelled(InputAction.CallbackContext _) => Aim?.Invoke(false);
 			void OnPrimaryWeaponPerformed(InputAction.CallbackContext _) => SwitchWeapon?.Invoke();
 			void OnSecondaryWeaponPerformed(InputAction.CallbackContext _) => SwitchWeapon?.Invoke();
+			void OnDebugScreenPerformed(InputAction.CallbackContext _) => ToggleDebugScreen?.Invoke();
 
 			void RemoveListeners()
 			{
@@ -111,6 +116,7 @@ public class InputManager : Singleton<InputManager>
 				pia.Player.Aim.canceled -= OnAimCancelled;
 				pia.Player.PrimaryWeapon.performed -= OnPrimaryWeaponPerformed;
 				pia.Player.SecondaryWeapon.performed -= OnSecondaryWeaponPerformed;
+				pia.Player.DebugScreen.performed -= OnDebugScreenPerformed;
 			}
 		}
 
@@ -121,10 +127,10 @@ public class InputManager : Singleton<InputManager>
 			movementAction.Disable();
 			lookAction.Disable();
 			
-			pia.Player.Jump.Enable();
-			pia.Player.Crouch.Enable();
-			pia.Player.Sprint.Enable();
-			pia.Player.Shoot.Enable();
-			pia.Player.Aim.Enable();
+			pia.Player.Jump.Disable();
+			pia.Player.Crouch.Disable();
+			pia.Player.Sprint.Disable();
+			pia.Player.Shoot.Disable();
+			pia.Player.Aim.Disable();
 		}
 	}

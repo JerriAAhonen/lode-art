@@ -14,24 +14,36 @@ public class Chunk
 	private readonly Vector3[] vertices = new Vector3[totalVertices];
 	private readonly int[] triangles = new int[totalVertices];
 	private readonly Vector2[] uvs = new Vector2[totalVertices];
+	private bool isActive;
 
 	private byte[,,] voxelMap = new byte[ChunkData.ChunkWidth, ChunkData.ChunkHeight, ChunkData.ChunkWidth];
 	public byte[,,] VoxelMap => voxelMap;
+	public bool IsVoxelMapPopulated { get; private set; }
 
 	public bool IsActive
 	{
-		get => chunkGO.activeSelf;
-		set => chunkGO.SetActive(value);
+		get => isActive;
+		set
+		{
+			isActive = value;
+			if (chunkGO != null)
+				chunkGO.SetActive(value);
+		}
 	}
 
 	public Vector3Int Position => chunkGO.transform.position.ToVector3Int();
-	
-	public Chunk(int x, int z) : this(new ChunkCoord(x, z)) { }
 
-	public Chunk(ChunkCoord chunkCoord)
+	public Chunk(int x, int z, bool generateOnLoad) : this(new ChunkCoord(x, z), generateOnLoad) { }
+	public Chunk(ChunkCoord chunkCoord, bool generateOnLoad)
 	{
 		this.chunkCoord = chunkCoord;
-		
+		isActive = true;
+		if (generateOnLoad)
+			Init();
+	}
+
+	public void Init()
+	{
 		chunkGO = new GameObject();
 		chunkGO.transform.SetParent(World.I.transform);
 		chunkGO.transform.position = chunkCoord.WorldPos;
@@ -52,8 +64,10 @@ public class Chunk
 		for (int x = 0; x < ChunkData.ChunkWidth; x++)
 		for (int z = 0; z < ChunkData.ChunkWidth; z++)
 		{
-			voxelMap[x, y, z] = World.I.GetVoxel(new Vector3Int(x, y, z) + Position);
+			voxelMap[x, y, z] = World.I.GetVoxelBlockID(new Vector3Int(x, y, z) + Position);
 		}
+
+		IsVoxelMapPopulated = true;
 	}
 
 	private void CreateMeshData()
@@ -112,9 +126,18 @@ public class Chunk
 
 		// Get information of voxels in neighbouring chunks form World class
 		if (!IsVoxelInChunk(x, y, z))
-			return World.I.Blocks[World.I.GetVoxel(pos + Position)].IsSolid;
+			return World.I.IsVoxelSolid(pos + Position);
 		
 		return World.I.Blocks[voxelMap[x, y, z]].IsSolid;
+	}
+
+	public byte GetVoxelFromWorldV3(Vector3Int pos)
+	{
+		var x = pos.x - Position.x;
+		var y = pos.y;
+		var z = pos.z - Position.z;
+
+		return voxelMap[x, y, z];
 	}
 	
 	private static bool IsVoxelInChunk(int x, int y, int z)

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using Data;
 using UnityEngine;
 using Util;
@@ -18,9 +19,12 @@ public class World : Singleton<World>
 
 	private Chunk[,] chunks = new Chunk[WorldData.WorldSizeInChunks, WorldData.WorldSizeInChunks];
 	private List<ChunkCoord> activeChunks = new();
+	private List<ChunkCoord> chunksToInit = new();
+	private Coroutine createChunksRoutine;
 
 	public Material BlockMaterial => blockAtlasMaterial;
 	public List<BlockData> Blocks => blockDatabase.Types;
+	public Player Player => player;
 
 	private void Start()
 	{
@@ -42,17 +46,13 @@ public class World : Singleton<World>
 	{
 		if (!ChunkCoord.FromWorldVector3(player.transform.position).Equals(lastPlayerCC))
 			CheckViewDistance();
+
+		if (chunksToInit.Count > 0 && createChunksRoutine == null)
+			createChunksRoutine = StartCoroutine(CreateChunks());
 	}
-
-	/// <summary>
-	/// Get Block id in WORLD COORDS
-	/// </summary>
-	public byte GetVoxel(int x, int y, int z) => GetVoxel(new Vector3Int(x, y, z));
-
-	/// <summary>
-	/// Get Block id in WORLD COORDS
-	/// </summary>
-	public byte GetVoxel(Vector3Int pos)
+	
+	/// <param name="pos">World space position</param>
+	public byte GetVoxelBlockID(Vector3Int pos)
 	{
 		var y = pos.y;
 		
@@ -108,12 +108,15 @@ public class World : Singleton<World>
 			if (IsChunkInWorld(coord))
 			{
 				if (chunks[x, z] == null)
-					CreateChunk(x, z);
+				{
+					chunks[x, z] = new Chunk(x, z, false);
+					chunksToInit.Add(new ChunkCoord(x, z));
+				}
 				else if (!chunks[x, z].IsActive)
 				{
 					chunks[x, z].IsActive = true;
-					activeChunks.Add(coord);
 				}
+				activeChunks.Add(coord);
 			}
 
 			for (int i = 0; i < previouslyActiveChunks.Count; i++)
@@ -131,20 +134,27 @@ public class World : Singleton<World>
 	
 	private void GenerateWorld()
 	{
-		var center = WorldData.WorldSizeInChunks / 2;
-		
+		const int center = WorldData.WorldSizeInChunks / 2;
+
 		for (int x = center - Settings.ViewDistanceInChunks; x < center + Settings.ViewDistanceInChunks; x++)
 		for (int z = center - Settings.ViewDistanceInChunks; z < center + Settings.ViewDistanceInChunks; z++)
 		{
-			CreateChunk(x, z);
+			var cc = new ChunkCoord(x, z);
+			chunks[x, z] = new Chunk(cc, true);
+			activeChunks.Add(cc);
 		}
 	}
 
-	private void CreateChunk(int x, int z) => CreateChunk(new ChunkCoord(x, z));
-	private void CreateChunk(ChunkCoord coord)
+	private IEnumerator CreateChunks()
 	{
-		chunks[coord.X, coord.Z] = new Chunk(coord.X, coord.Z);
-		activeChunks.Add(coord);
+		while (chunksToInit.Count > 0)
+		{
+			chunks[chunksToInit[0].X, chunksToInit[0].Z].Init();
+			chunksToInit.RemoveAt(0);
+			yield return null;
+		}
+
+		createChunksRoutine = null;
 	}
 
 	private bool IsChunkInWorld(ChunkCoord coord)
@@ -163,13 +173,17 @@ public class World : Singleton<World>
 	public bool IsVoxelSolid(float x, float y, float z) =>
 		IsVoxelSolid(new Vector3Int(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Mathf.FloorToInt(z)));
 	
+	/// <param name="pos">World space position</param>
 	public bool IsVoxelSolid(Vector3Int pos)
 	{
 		var coord = ChunkCoord.FromWorldVector3(pos);
 
-		var xInChunkSpace = pos.x - coord.X * ChunkData.ChunkWidth;
-		var zInChunkSpace = pos.z - coord.Z * ChunkData.ChunkWidth;
+		if (!IsVoxelInWorld(pos))
+			return false;
 
-		return Blocks[chunks[coord.X, coord.Z].VoxelMap[xInChunkSpace, pos.y, zInChunkSpace]].IsSolid;
+		if (chunks[coord.X, coord.Z] != null && chunks[coord.X, coord.Z].IsVoxelMapPopulated)
+			return Blocks[chunks[coord.X, coord.Z].GetVoxelFromWorldV3(pos)].IsSolid;
+
+		return Blocks[GetVoxelBlockID(pos)].IsSolid;
 	}
 }
