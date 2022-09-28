@@ -116,6 +116,15 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DebugScreen"",
+                    ""type"": ""Button"",
+                    ""id"": ""8366174e-7569-465f-81dc-1602fb861d22"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -283,6 +292,17 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                     ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4b0ee681-b69c-4b33-bfe2-26d7ec7ac2ed"",
+                    ""path"": ""<Keyboard>/f3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DebugScreen"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -301,6 +321,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
         m_Player_PrimaryWeapon = m_Player.FindAction("PrimaryWeapon", throwIfNotFound: true);
         m_Player_SecondaryWeapon = m_Player.FindAction("SecondaryWeapon", throwIfNotFound: true);
         m_Player_Pause = m_Player.FindAction("Pause", throwIfNotFound: true);
+        m_Player_DebugScreen = m_Player.FindAction("DebugScreen", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -370,6 +391,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_PrimaryWeapon;
     private readonly InputAction m_Player_SecondaryWeapon;
     private readonly InputAction m_Player_Pause;
+    private readonly InputAction m_Player_DebugScreen;
     public struct PlayerActions
     {
         private @PlayerInputActions m_Wrapper;
@@ -384,6 +406,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
         public InputAction @PrimaryWeapon => m_Wrapper.m_Player_PrimaryWeapon;
         public InputAction @SecondaryWeapon => m_Wrapper.m_Player_SecondaryWeapon;
         public InputAction @Pause => m_Wrapper.m_Player_Pause;
+        public InputAction @DebugScreen => m_Wrapper.m_Player_DebugScreen;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -423,6 +446,9 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                 @Pause.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPause;
                 @Pause.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPause;
                 @Pause.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPause;
+                @DebugScreen.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnDebugScreen;
+                @DebugScreen.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnDebugScreen;
+                @DebugScreen.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnDebugScreen;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -457,6 +483,9 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                 @Pause.started += instance.OnPause;
                 @Pause.performed += instance.OnPause;
                 @Pause.canceled += instance.OnPause;
+                @DebugScreen.started += instance.OnDebugScreen;
+                @DebugScreen.performed += instance.OnDebugScreen;
+                @DebugScreen.canceled += instance.OnDebugScreen;
             }
         }
     }
@@ -473,5 +502,6 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
         void OnPrimaryWeapon(InputAction.CallbackContext context);
         void OnSecondaryWeapon(InputAction.CallbackContext context);
         void OnPause(InputAction.CallbackContext context);
+        void OnDebugScreen(InputAction.CallbackContext context);
     }
 }
