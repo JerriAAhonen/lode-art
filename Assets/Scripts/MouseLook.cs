@@ -5,21 +5,19 @@ public class MouseLook : MonoBehaviour
 	[SerializeField] private float sensitivity;
 	
 	private InputManager inputManager;
-	private Player player;
 	private PlayerMovement movement;
 	private Transform tm;
 
 	private float xRot;
 	private float yRot;
+
+	private bool IsReady { get; set; }
 	
-	public bool IsReady { get; private set; }
-	
-	public void Init(Player player, PlayerMovement movement)
+	public void Init(PlayerMovement movement)
 	{
 		inputManager = InputManager.I;
 		tm = transform;
 
-		this.player = player;
 		this.movement = movement;
 
 		IsReady = true;

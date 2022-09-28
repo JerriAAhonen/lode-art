@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -7,26 +8,23 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private float playerHeight = 2f;
 	[SerializeField] private float playerRadius = 0.25f;
 	[SerializeField] private float boundsTolerance = 0.1f;
-	[SerializeField] private float speed = 5;
+	[SerializeField] private float walkSpeed = 5;
 	[SerializeField] private float sprintSpeed = 7;
 	[SerializeField] private float jumpHeight = 1.5f;
 	[SerializeField] private float jumpTimingForgiveness = 0.1f;
 
 	private bool isInitialised;
 
-	private Player player;
 	private InputManager inputManager;
 	private Transform tm;
-	private float verticalVel;
+	public float verticalVel;
 	private bool isGrounded;
-
-	public bool PrintDebugLogs => printDebugLogs;
 
 	//------------------------------
 	// Input
 
-	public bool Sprinting { get; set; }
-	public bool Crouching { get; set; }
+	private bool Sprinting { get; set; }
+	private bool Crouching { get; set; }
 
 	#region MonoBehaviour
 
@@ -35,9 +33,8 @@ public class PlayerMovement : MonoBehaviour
 		tm = transform;
 	}
 
-	public void Init(Player player)
+	public void Init()
 	{
-		this.player = player;
 		inputManager = InputManager.I;
 
 		//------------------------------
@@ -50,33 +47,39 @@ public class PlayerMovement : MonoBehaviour
 		isInitialised = true;
 	}
 
-	private void Update()
+	private void FixedUpdate()
 	{
 		if (!isInitialised)
 			return;
 
-		HorizontalMovement();
-
-		//------------------------------
-		// VERTICAL movement
-
-		if (!isGrounded)
-			verticalVel += gravity * Time.deltaTime;
-
-		verticalVel = CheckDownSpeed(verticalVel);
-		transform.Translate(Vector3.up * (verticalVel * Time.deltaTime));
+		CalculateVelocity();
+		
+		transform.Translate(velocity, Space.World);
 	}
 
-	private void HorizontalMovement()
+	private Vector3 velocity;
+	private void CalculateVelocity()
 	{
+		if (verticalVel > gravity)
+			verticalVel += gravity * Time.fixedDeltaTime;
+		
 		var horMovement = inputManager.MovementInput;
-		var horVel = tm.right * horMovement.x + tm.forward * horMovement.y;
+		velocity = tm.right * horMovement.x + tm.forward * horMovement.y;
 		if (Sprinting)
-			horVel *= sprintSpeed * Time.deltaTime;
+			velocity *= sprintSpeed * Time.deltaTime;
 		else
-			horVel *= speed * Time.deltaTime;
+			velocity *= walkSpeed * Time.deltaTime;
 
-		transform.Translate(horVel, Space.World);
+		velocity += Vector3.up * verticalVel * Time.fixedDeltaTime;
+
+		if (velocity.z > 0 && Front || velocity.z < 0 && Back)
+			velocity.z = 0;
+		if (velocity.x > 0 && Right || velocity.x < 0 && Left)
+			velocity.x = 0;
+		if (velocity.y > 0)
+			velocity.y = CheckSpeed_Up(velocity.y);
+		if (velocity.y < 0)
+			velocity.y = CheckSpeed_Down(velocity.y);
 	}
 
 	private void OnDisable()
@@ -136,7 +139,7 @@ public class PlayerMovement : MonoBehaviour
 
 	#region Collision
 
-	private float CheckDownSpeed(float downSpeed)
+	private float CheckSpeed_Down(float downSpeed)
 	{
 		var pos = transform.position;
 		if (World.I.IsVoxelSolid(pos.x - playerRadius, pos.y + downSpeed, pos.z - playerRadius)
@@ -144,7 +147,7 @@ public class PlayerMovement : MonoBehaviour
 		    || World.I.IsVoxelSolid(pos.x + playerRadius, pos.y + downSpeed, pos.z + playerRadius)
 		    || World.I.IsVoxelSolid(pos.x - playerRadius, pos.y + downSpeed, pos.z + playerRadius))
 		{
-			isGrounded = false;
+			isGrounded = true;
 			return 0;
 		}
 
@@ -152,7 +155,7 @@ public class PlayerMovement : MonoBehaviour
 		return downSpeed;
 	}
 	
-	private float CheckUpSpeed(float upSpeed)
+	private float CheckSpeed_Up(float upSpeed)
 	{
 		var pos = transform.position;
 		if (World.I.IsVoxelSolid(pos.x - playerRadius, pos.y + playerHeight + upSpeed, pos.z - playerRadius)

@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -11,9 +8,9 @@ public class Player : MonoBehaviour
 	private void Awake()
 	{
 		movement = GetComponent<PlayerMovement>();
-		movement.Init(this);
+		movement.Init();
 
 		mouseLook = GetComponentInChildren<MouseLook>();
-		mouseLook.Init(this, movement);
+		mouseLook.Init(movement);
 	}
 }
